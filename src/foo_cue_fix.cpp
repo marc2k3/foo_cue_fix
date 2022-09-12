@@ -2,13 +2,8 @@
 #define WINVER _WIN32_WINNT_WIN7
 #define NOMINMAX
 
-#include <mutex>
-#include <queue>
 #include <set>
-#include <thread>
 #include <foobar2000/SDK/foobar2000.h>
-
-#include "ThreadPool.hpp"
 
 #pragma comment(lib, "shlwapi.lib")
 
@@ -34,12 +29,12 @@ namespace
 
 	FB2K_SERVICE_FACTORY(InstallationValidator);
 
-	class CueTask : public SimpleThreadTask
+	class CueFix : public threaded_process_callback
 	{
 	public:
-		CueTask(size_t playlist, metadb_handle_list_cref handles) : m_playlist(playlist), m_handles(handles) {}
+		CueFix(size_t playlist, metadb_handle_list_cref handles) : m_playlist(playlist), m_handles(handles) {}
 
-		void run() override
+		void run(threaded_process_status&, abort_callback&) override
 		{
 			const size_t count = m_handles.get_count();
 			size_t to_remove_count{};
@@ -145,8 +140,8 @@ namespace
 			metadb_handle_list items;
 			api->playlist_get_all_items(playlist, items);
 
-			auto task = std::make_unique<CueTask>(playlist, items);
-			SimpleThreadPool::get().add_task(std::move(task));
+			auto cb = fb2k::service_new<CueFix>(playlist, items);
+			threaded_process::get()->run_modeless(cb, threaded_process::flag_silent, core_api::get_main_window(), component_name);
 		}
 
 		void on_default_format_changed() override {}
