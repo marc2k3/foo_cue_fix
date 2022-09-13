@@ -143,7 +143,7 @@ namespace
 		void on_playlists_removing(const pfc::bit_array&, size_t, size_t) override {}
 		void on_item_ensure_visible(size_t, size_t) override {}
 		void on_item_focus_change(size_t, size_t, size_t) override {}
-		void on_items_removed(size_t, const pfc::bit_array&, size_t, size_t new_count) override {}
+		void on_items_removed(size_t, const pfc::bit_array&, size_t, size_t) override {}
 		void on_items_reordered(size_t, const size_t*, size_t) override {}
 		void on_items_selection_change(size_t, const pfc::bit_array&, const pfc::bit_array&) override {}
 		void on_playback_order_changed(size_t) override {}
