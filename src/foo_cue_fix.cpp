@@ -42,6 +42,7 @@ namespace
 				const pfc::string8 path = m_handles[i]->get_path();
 				paths.emplace_back(path);
 
+				if (recs[i].info.is_empty()) continue;
 				const char* filename = recs[i].info->info().info_get("referenced_file");
 				if (filename == nullptr) continue;
 
