@@ -71,7 +71,7 @@ namespace
 
 					const auto it = std::ranges::find_if(referenced_files, [path = paths[i]](const pfc::string8& referenced_file) -> bool
 						{
-							return _stricmp(path, referenced_file) == 0;
+							return stricmp_utf8(path, referenced_file) == 0;
 						});
 
 					if (it != referenced_files.end())
