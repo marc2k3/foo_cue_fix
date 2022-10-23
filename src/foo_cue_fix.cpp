@@ -2,7 +2,8 @@
 #define WINVER _WIN32_WINNT_WIN7
 #define NOMINMAX
 
-#include <set>
+#include <string>
+#include <concurrent_unordered_set.h>
 #include <foobar2000/SDK/foobar2000.h>
 
 #pragma comment(lib, "shlwapi.lib")
@@ -23,76 +24,81 @@ namespace
 	class CueFix : public threaded_process_callback
 	{
 	public:
-		CueFix(size_t playlist, metadb_handle_list_cref handles) : m_playlist(playlist), m_handles(handles) {}
+		CueFix(size_t playlist, metadb_handle_list_cref handles) : m_playlist(playlist), m_handles(handles), m_count(handles.get_count())
+		{
+			m_remove.resize(m_count);
+		}
+
+		void on_done(ctx_t, bool)
+		{
+			if (m_remove_count > 0)
+			{
+				auto api = playlist_manager::get();
+				api->playlist_remove_items(m_playlist, m_remove);
+
+				pfc::string8 playlist_name;
+				api->playlist_get_name(m_playlist, playlist_name);
+				FB2K_console_formatter() << component_name << ": found " << m_remove_count << " item(s) to remove on playlist named " << playlist_name;
+			}
+		}
 
 		void run(threaded_process_status&, abort_callback&) override
 		{
-			const size_t count = m_handles.get_count();
-			size_t to_remove_count{};
+			pfc::bit_array_bittable ignore(m_count);
+			pfc::array_t<std::string> paths;
+			paths.set_size(m_count);
 
-			pfc::bit_array_bittable is_cue(count);
-			pfc::bit_array_bittable to_remove(count);
-			std::set<pfc::string8> referenced_files;
-			std::vector<pfc::string8> paths;
-
-			auto recs = metadb_v2::get()->queryMultiSimple(m_handles);
-
-			for (size_t i = 0; i < count; ++i)
-			{
-				const pfc::string8 path = m_handles[i]->get_path();
-				paths.emplace_back(path);
-
-				if (recs[i].info.is_empty()) continue;
-				const char* filename = recs[i].info->info().info_get("referenced_file");
-				if (filename == nullptr) continue;
-
-				is_cue.set(i, true);
-
-				const pfc::string8 parent_folder = pfc::string_directory(path);
-				const pfc::string8 referenced_file = pfc::io::path::combine(parent_folder, filename);
-
-				if (is_file(referenced_file))
+			metadb_v2::get()->queryMultiParallel_(m_handles, [&](size_t idx, const metadb_v2::rec_t& rec)
 				{
-					referenced_files.emplace(referenced_file);
-				}
-				else
-				{
-					to_remove.set(i, true);
-					to_remove_count++;
-				}
-			}
-
-			if (referenced_files.size() > 0)
-			{
-				for (size_t i = 0; i < count; ++i)
-				{
-					if (to_remove.get(i)) continue;
-					if (is_cue.get(i)) continue;
-
-					const auto it = std::ranges::find_if(referenced_files, [path = paths[i]](const pfc::string8& referenced_file) -> bool
+					const std::string path = m_handles[idx]->get_path();
+					paths[idx] = path;
+					if (path.starts_with("file://"))
+					{
+						if (rec.info.is_valid())
 						{
-							return stricmp_utf8(path, referenced_file) == 0;
+							const char* filename = rec.info->info().info_get("referenced_file");
+							if (filename != nullptr)
+							{
+								ignore.set(idx, true);
+								const pfc::string8 parent_folder = pfc::string_directory(path.c_str());
+								const pfc::string8 referenced_file = pfc::io::path::combine(parent_folder, filename);
+
+								if (is_file(referenced_file))
+								{
+									m_referenced_files.insert(referenced_file.get_ptr());
+								}
+								else
+								{
+									m_remove.set(idx, true);
+									m_remove_count++;
+								}
+							}
+						}
+					}
+					else
+					{
+						ignore.set(idx, true);
+					}
+				});
+
+			if (m_referenced_files.size() > 0)
+			{
+				for (size_t i = 0; i < m_count; ++i)
+				{
+					if (ignore.get(i) || m_remove.get(i)) continue;
+					auto& path = paths[i];
+
+					const auto it = std::ranges::find_if(m_referenced_files, [path](auto&& referenced_file) -> bool
+						{
+							return stricmp_utf8(path.c_str(), referenced_file.c_str()) == 0;
 						});
 
-					if (it != referenced_files.end())
+					if (it != m_referenced_files.end())
 					{
-						to_remove.set(i, true);
-						to_remove_count++;
+						m_remove.set(i, true);
+						m_remove_count++;
 					}
 				}
-			}
-
-			if (to_remove_count > 0)
-			{
-				fb2k::inMainThread([=, p = m_playlist]
-					{
-						auto api = playlist_manager::get();
-						api->playlist_remove_items(p, to_remove);
-
-						pfc::string8 playlist_name;
-						api->playlist_get_name(p, playlist_name);
-						FB2K_console_formatter() << component_name << ": found " << to_remove_count << " item(s) to remove on playlist named " << playlist_name;
-					});
 			}
 		}
 
@@ -107,8 +113,10 @@ namespace
 			return false;
 		}
 
+		concurrency::concurrent_unordered_set<std::string> m_referenced_files;
 		metadb_handle_list m_handles;
-		size_t m_playlist{};
+		pfc::bit_array_bittable m_remove;
+		size_t m_count{}, m_playlist{}, m_remove_count{};
 	};
 
 	class PlaylistCallbackStatic : public playlist_callback_static
