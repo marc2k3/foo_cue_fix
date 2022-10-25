@@ -116,7 +116,8 @@ namespace
 		concurrency::concurrent_unordered_set<std::string> m_referenced_files;
 		metadb_handle_list m_handles;
 		pfc::bit_array_bittable m_remove;
-		size_t m_count{}, m_playlist{}, m_remove_count{};
+		size_t m_count{}, m_playlist{};
+		std::atomic_size_t m_remove_count{};
 	};
 
 	class PlaylistCallbackStatic : public playlist_callback_static
