@@ -1,3 +1,6 @@
+### 1.0.6
+- Compiled with latest `foobar2000` `SDK`.
+
 ### 1.0.5
 - Fix potential bug with variable that stores removed item count.
 
