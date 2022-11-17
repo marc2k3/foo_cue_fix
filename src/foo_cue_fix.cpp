@@ -42,7 +42,7 @@ namespace
 			}
 		}
 
-		void run(threaded_process_status&, abort_callback&) override
+		void run(threaded_process_status&, abort_callback&) final
 		{
 			pfc::bit_array_bittable ignore(m_count);
 			pfc::array_t<std::string> paths;
@@ -123,12 +123,12 @@ namespace
 	class PlaylistCallbackStatic : public playlist_callback_static
 	{
 	public:
-		uint32_t get_flags() override
+		uint32_t get_flags() final
 		{
 			return flag_on_items_added;
 		}
 
-		void on_items_added(size_t playlist, size_t, metadb_handle_list_cref, const pfc::bit_array&) override
+		void on_items_added(size_t playlist, size_t, metadb_handle_list_cref, const pfc::bit_array&) final
 		{
 			auto api = playlist_manager::get();
 
@@ -145,24 +145,24 @@ namespace
 			threaded_process::get()->run_modeless(cb, threaded_process::flag_silent, core_api::get_main_window(), component_name);
 		}
 
-		void on_default_format_changed() override {}
-		void on_items_modified(size_t, const pfc::bit_array&) override {}
-		void on_items_modified_fromplayback(size_t, const pfc::bit_array&, playback_control::t_display_level) override {}
-		void on_items_removing(size_t, const pfc::bit_array&, size_t, size_t) override {}
-		void on_items_replaced(size_t, const pfc::bit_array&, const pfc::list_base_const_t<t_on_items_replaced_entry>&) override {}
-		void on_playlists_removing(const pfc::bit_array&, size_t, size_t) override {}
-		void on_item_ensure_visible(size_t, size_t) override {}
-		void on_item_focus_change(size_t, size_t, size_t) override {}
-		void on_items_removed(size_t, const pfc::bit_array&, size_t, size_t) override {}
-		void on_items_reordered(size_t, const size_t*, size_t) override {}
-		void on_items_selection_change(size_t, const pfc::bit_array&, const pfc::bit_array&) override {}
-		void on_playback_order_changed(size_t) override {}
-		void on_playlist_activate(size_t, size_t) override {}
-		void on_playlist_created(size_t, const char*, size_t) override {}
-		void on_playlist_locked(size_t, bool) override {}
-		void on_playlist_renamed(size_t, const char*, size_t) override {}
-		void on_playlists_removed(const pfc::bit_array&, size_t, size_t) override {}
-		void on_playlists_reorder(const size_t*, size_t) override {}
+		void on_default_format_changed() final {}
+		void on_items_modified(size_t, const pfc::bit_array&) final {}
+		void on_items_modified_fromplayback(size_t, const pfc::bit_array&, playback_control::t_display_level) final {}
+		void on_items_removing(size_t, const pfc::bit_array&, size_t, size_t) final {}
+		void on_items_replaced(size_t, const pfc::bit_array&, const pfc::list_base_const_t<t_on_items_replaced_entry>&) final {}
+		void on_playlists_removing(const pfc::bit_array&, size_t, size_t) final {}
+		void on_item_ensure_visible(size_t, size_t) final {}
+		void on_item_focus_change(size_t, size_t, size_t) final {}
+		void on_items_removed(size_t, const pfc::bit_array&, size_t, size_t) final {}
+		void on_items_reordered(size_t, const size_t*, size_t) final {}
+		void on_items_selection_change(size_t, const pfc::bit_array&, const pfc::bit_array&) final {}
+		void on_playback_order_changed(size_t) final {}
+		void on_playlist_activate(size_t, size_t) final {}
+		void on_playlist_created(size_t, const char*, size_t) final {}
+		void on_playlist_locked(size_t, bool) final {}
+		void on_playlist_renamed(size_t, const char*, size_t) final {}
+		void on_playlists_removed(const pfc::bit_array&, size_t, size_t) final {}
+		void on_playlists_reorder(const size_t*, size_t) final {}
 	};
 
 	FB2K_SERVICE_FACTORY(PlaylistCallbackStatic);
