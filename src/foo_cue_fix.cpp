@@ -52,32 +52,30 @@ namespace
 				{
 					const std::string path = m_handles[idx]->get_path();
 					paths[idx] = path;
-					if (path.starts_with("file://"))
-					{
-						if (rec.info.is_valid())
-						{
-							const char* filename = rec.info->info().info_get("referenced_file");
-							if (filename != nullptr)
-							{
-								ignore.set(idx, true);
-								const pfc::string8 parent_folder = pfc::string_directory(path.c_str());
-								const pfc::string8 referenced_file = pfc::io::path::combine(parent_folder, filename);
 
-								if (is_file(referenced_file))
-								{
-									m_referenced_files.insert(referenced_file.get_ptr());
-								}
-								else
-								{
-									m_remove.set(idx, true);
-									m_remove_count++;
-								}
-							}
-						}
+					if (!path.starts_with("file://"))
+					{
+						ignore.set(idx, true);
+						return;
+					}
+
+					if (rec.info.is_empty()) return;
+					
+					const char* filename = rec.info->info().info_get("referenced_file");
+					if (filename == nullptr) return;
+
+					ignore.set(idx, true);
+					const pfc::string8 parent_folder = pfc::string_directory(path.c_str());
+					const pfc::string8 referenced_file = pfc::io::path::combine(parent_folder, filename);
+
+					if (is_file(referenced_file))
+					{
+						m_referenced_files.insert(referenced_file.get_ptr());
 					}
 					else
 					{
-						ignore.set(idx, true);
+						m_remove.set(idx, true);
+						m_remove_count++;
 					}
 				});
 
