@@ -33,11 +33,11 @@ namespace
 		{
 			if (m_remove_count > 0)
 			{
-				auto api = playlist_manager::get();
-				api->playlist_remove_items(m_playlist, m_remove);
+				auto plman = playlist_manager::get();
+				plman->playlist_remove_items(m_playlist, m_remove);
 
 				pfc::string8 playlist_name;
-				api->playlist_get_name(m_playlist, playlist_name);
+				plman->playlist_get_name(m_playlist, playlist_name);
 				FB2K_console_formatter() << component_name << ": found " << m_remove_count << " item(s) to remove on playlist named " << playlist_name;
 			}
 		}
@@ -128,16 +128,16 @@ namespace
 
 		void on_items_added(size_t playlist, size_t, metadb_handle_list_cref, const pfc::bit_array&) final
 		{
-			auto api = playlist_manager::get();
+			auto plman = playlist_manager::get();
 
-			if (api->playlist_lock_get_filter_mask(playlist) & playlist_lock::filter_remove)
+			if (plman->playlist_lock_get_filter_mask(playlist) & playlist_lock::filter_remove)
 			{
 				//FB2K_console_formatter() << "doing nothing, playlist lock prevents removal of items";
 				return;
 			}
 
 			metadb_handle_list items;
-			api->playlist_get_all_items(playlist, items);
+			plman->playlist_get_all_items(playlist, items);
 
 			auto cb = fb2k::service_new<CueFix>(playlist, items);
 			threaded_process::get()->run_modeless(cb, threaded_process::flag_silent, core_api::get_main_window(), component_name);
