@@ -1,7 +1,7 @@
 #define _WIN32_WINNT _WIN32_WINNT_WIN7
 #define WINVER _WIN32_WINNT_WIN7
-#define NOMINMAX
 
+#include <algorithm>
 #include <string>
 #include <concurrent_unordered_set.h>
 #include <foobar2000/SDK/foobar2000.h>
